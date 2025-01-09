@@ -142,17 +142,18 @@ st.download_button(
     mime="text/csv"
 )
 
+# Step 3: Style selection
+styles = select_styles(df)
+if not styles:
+    st.error("No styles selected. Please choose at least one style to proceed.")
+    st.stop()
+
 # Step 2: Operator selection
 selected_operators = select_operators(df)
 if selected_operators.empty:
     st.error("No operators selected. Please choose at least one operator to proceed.")
     st.stop()
 
-# Step 3: Style selection
-styles = select_styles(df)
-if not styles:
-    st.error("No styles selected. Please choose at least one style to proceed.")
-    st.stop()
 
 # Step 4: Efficiency calculations
 st.subheader("Step 4: Calculating Efficiencies")
