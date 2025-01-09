@@ -114,6 +114,8 @@ def select_styles(df):
         st.sidebar.warning("Style descriptions not found in the dataset.")
         return []
 
+# List of datasets
+datasets = [f"ina_line{i}.csv" for i in range(1, 13)]
 
 # Step 1: Dataset selection
 file_path = select_dataset(datasets)
@@ -145,7 +147,7 @@ if not styles:
     st.error("No styles selected. Please choose at least one style to proceed.")
     st.stop()
 
-# Filter data based on selected styles before proceeding
+# Filter data based on selected styles
 df = df[df['ODPI_ST_Description'].isin(styles)]
 if df.empty:
     st.error(f"No data is available for the selected styles: {styles}. Please adjust your selection.")
@@ -157,17 +159,11 @@ if selected_operators.empty:
     st.error("No operators selected. Please choose at least one operator to proceed.")
     st.stop()
 
-
+# Continue with the remaining steps
 # Step 4: Efficiency calculations
 st.subheader("Step 4: Calculating Efficiencies")
 calculator = EfficiencyCalculator()
 df = calculator.calculate_efficiency(df)
-
-# Filter data based on selected styles
-df = df[df['ODPI_ST_Description'].isin(styles)]
-if df.empty:
-    st.error(f"No data is available for the selected styles: {styles}. Please adjust your selection.")
-    st.stop()
 
 # Visualization of Efficiency by Style
 st.subheader("Efficiency Visualization by Style")
@@ -199,112 +195,4 @@ for style in styles:
     else:
         st.warning(f"No efficiency data is available for the style: {style}")
 
-# Grouping, Categorizing, and Calculating Weightage
-st.subheader("Step 5: Grouping, Categorizing, and Weightage Calculation")
-grouped_data = calculator.aggregate_operator_data_grouped(df)
-categorized_data = calculator.categorize_with_grouped_averages(grouped_data, 30)
-categorized_data = calculator.calculate_operator_weightage(categorized_data)
-categorized_data = categorized_data.merge(df[['ODPI_EM_Key', 'Operator_FullName']].drop_duplicates(), on='ODPI_EM_Key', how='left')
-
-# Display and download categorized data
-st.write("### Categorized Data")
-st.dataframe(categorized_data.head())
-categorized_buffer = io.BytesIO()
-categorized_data.to_csv(categorized_buffer, index=False)
-categorized_buffer.seek(0)
-st.download_button(
-    label="Download Categorized Data (CSV)",
-    data=categorized_buffer,
-    file_name="categorized_data.csv",
-    mime="text/csv"
-)
-
-# Step 6: Historical averages and operations per shift
-st.subheader("Step 6: Historical Averages and Operations Analysis")
-shift_calculator = ShiftOperationsCalculator()
-historical_avg = shift_calculator.calculate_historical_average_time(df)
-operations_per_shift = shift_calculator.operations_per_shift(historical_avg)
-
-st.write("### Operations Summary")
-st.dataframe(operations_per_shift.head())
-operations_buffer = io.BytesIO()
-operations_per_shift.to_csv(operations_buffer, index=False)
-operations_buffer.seek(0)
-st.download_button(
-    label="Download Operations Data (CSV)",
-    data=operations_buffer,
-    file_name="operations_data.csv",
-    mime="text/csv"
-)
-
-# Step 7: Operator Allocation
-st.subheader("Step 7: Operator Allocation")
-allocator = OperatorAllocator()
-allocation = allocator.allocate_operators(categorized_data, df, selected_operators['ODPI_EM_Key'].tolist(), styles)
-
-st.write("### Operator Allocation Summary")
-for style, operations in allocation.items():
-    st.write(f"#### Style: {style}")
-    for operation, ops in operations.items():
-        st.write(f"##### Operation: {operation}")
-        operator_details = [
-            f"- Name: {df.loc[df['ODPI_EM_Key'] == operator, 'Operator_FullName'].values[0]} (Key: {operator})"
-            for operator in ops
-        ]
-        st.write("\n".join(operator_details))
-
-# Prepare allocation report for download
-allocation_report = []
-for style, operations in allocation.items():
-    for operation, ops in operations.items():
-        for operator in ops:
-            allocation_report.append({
-                'Style': style,
-                'Operation': operation,
-                'Operator Key': operator,
-                'Operator Name': df.loc[df['ODPI_EM_Key'] == operator, 'Operator_FullName'].values[0]
-            })
-
-allocation_df = pd.DataFrame(allocation_report)
-st.write("### Operator Allocation Report")
-st.dataframe(allocation_df.head())
-
-allocation_buffer = io.BytesIO()
-allocation_df.to_csv(allocation_buffer, index=False)
-allocation_buffer.seek(0)
-st.download_button(
-    label="Download Allocation Report (CSV)",
-    data=allocation_buffer,
-    file_name="operator_allocation_report.csv",
-    mime="text/csv"
-)
-
-st.success("Analysis complete! All reports are available for download.")
-
-# Step 8: Calculate and Display Achieved Efficiency
-st.subheader("Step 8: Achieved Efficiency")
-achieved_efficiency = allocator.calculate_achieved_efficiency(allocation, categorized_data)
-
-# Convert achieved efficiency to a DataFrame for display and download
-efficiency_report = pd.DataFrame({
-    'Style': list(achieved_efficiency.keys()),
-    'Achieved Efficiency (%)': list(achieved_efficiency.values())
-})
-
-# Display the Achieved Efficiency Report
-st.write("### Achieved Efficiency Report")
-st.dataframe(efficiency_report.head())
-
-# Add a download button for the Achieved Efficiency Report
-efficiency_buffer = io.BytesIO()
-efficiency_report.to_csv(efficiency_buffer, index=False)
-efficiency_buffer.seek(0)
-st.download_button(
-    label="Download Achieved Efficiency Report (CSV)",
-    data=efficiency_buffer,
-    file_name="achieved_efficiency_report.csv",
-    mime="text/csv"
-)
-
-st.success("Analysis complete! Achieved Efficiency Report is available for download.")
-
+st.success("Analysis complete!")
