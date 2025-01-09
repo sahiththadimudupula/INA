@@ -116,7 +116,7 @@ def select_styles(df):
 
 
 # List of datasets
-datasets = [f"ina_line{i}" for i in range(1, 13)]
+datasets = [f"ina_line{i}.xlsx" for i in range(1, 13)]
 
 # Step 1: Dataset selection
 file_path = select_dataset(datasets)
