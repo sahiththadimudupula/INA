@@ -53,7 +53,7 @@ class OperatorAllocator:
 
             # Get operation time requirements, excluding "QUALITY CHECKING"
             operation_times = (
-                df[(df['ODPI_ST_Description'] == style) & (df['ODPI_PC_Description'] != "QUALITY CHECK")]
+                df[(df['ODPI_ST_Description'] == style) & (df['ODPI_PC_Description'] != "QUALITY CHECK","QUALITY CHECKING)]
                 .groupby('ODPI_PC_Description')['ODPI_OC_Standard_Time']
                 .mean()
                 .reset_index()
